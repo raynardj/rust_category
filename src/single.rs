@@ -1,12 +1,12 @@
-std::collections::HashMap
+use std::collections::HashMap;
 
-struct CategoryToIndices {
+pub struct CategoryToIndices {
     pad_mst: bool,
     mapper: HashMap<String, i32>,
 }
 
 impl CategoryToIndices {
-    fn new(arr: &Vec<String>, pad_mst: bool) -> CategoryToIndices {
+    pub fn new(arr: &Vec<String>, pad_mst: bool) -> CategoryToIndices {
         let mapper = Self::create_mapper(arr);
         CategoryToIndices {
             pad_mst,
@@ -14,7 +14,7 @@ impl CategoryToIndices {
         }
     }
 
-    fn create_mapper(arr: &Vec<String>) -> HashMap<String, i32> {
+    pub fn create_mapper(arr: &Vec<String>) -> HashMap<String, i32> {
         let mut mapper = HashMap::new();
         for (i, v) in arr.iter().enumerate() {
             mapper.insert(v.to_string(), i as i32);
@@ -22,11 +22,11 @@ impl CategoryToIndices {
         mapper
     }
 
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.mapper.len()
     }
 
-    fn get_int(&self, keyword: &str) -> i32 {
+    pub fn get_int(&self, keyword: &str) -> i32 {
         if self.pad_mst {
             if self.mapper.contains_key(keyword) {
                 *self.mapper.get(keyword).unwrap()
@@ -39,7 +39,7 @@ impl CategoryToIndices {
     }
 }
 
-struct Category{
+pub struct Category{
     pad_mst: bool,
     i2c: Vec<String>,
     c2i: CategoryToIndices,
@@ -47,15 +47,15 @@ struct Category{
 
 impl Category{
     pub fn new(arr: &Vec<String>, pad_mst: bool) -> Category {
-        let i2c: Vec<String>;
+        let mut i2c: Vec<String>;
         if pad_mst {
             i2c = vec!["[MST]".to_string()];
-            i2c.extend(arr);
+            i2c.extend(arr.clone());
         } else {
             i2c = arr.clone();
         }
             
-        let c2i = CategoryToIndices::new(i2c, pad_mst);
+        let c2i = CategoryToIndices::new(&i2c, pad_mst);
         Category {
             pad_mst,
             i2c,
@@ -81,7 +81,7 @@ impl Category{
 
     pub fn category_to_onehot(&self, category: &str) -> Vec<f32> {
         let mut res = vec![0.0; self.c2i.len()];
-        res[self.c2i.get_int(category)] = 1.0;
+        res[self.c2i.get_int(category) as usize] = 1.0;
         res
     }
 
@@ -102,5 +102,7 @@ impl Category{
             }
             i += 1;
         }
+        panic!("onehot_to_category: no hot in the encoded");
     }
 }
+

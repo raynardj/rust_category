@@ -1,7 +1,7 @@
 // #[macro_use]
-extern crate cpython;
-use cpython::{Python, PyResult, py_module_initializer, py_fn};
-mod single;
+// extern crate cpython;
+// use cpython::{Python, PyResult, py_module_initializer, py_fn};
+// mod single;
 
 // Template
 // py_module_initializer!(custom_class, |py, m| {
@@ -20,3 +20,7 @@ mod single;
 //         Ok(PyNone)
 //     }
 // });
+
+pub fn main(){
+
+}
