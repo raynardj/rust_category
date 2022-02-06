@@ -1,4 +1,10 @@
+#[macro_use]
+use numpy::{ToPyArray, PyArray};
+
 use std::collections::HashMap;
+use pyo3::prelude::*;
+use pyo3::types::*;
+
 
 pub struct CategoryToIndices {
     pad_mst: bool,
@@ -6,7 +12,7 @@ pub struct CategoryToIndices {
 }
 
 impl CategoryToIndices {
-    pub fn new(arr: &Vec<String>, pad_mst: bool) -> CategoryToIndices {
+    pub fn new(arr: &Vec<String>, pad_mst: bool) -> Self {
         let mapper = Self::create_mapper(arr);
         CategoryToIndices {
             pad_mst,
@@ -39,20 +45,24 @@ impl CategoryToIndices {
     }
 }
 
+#[pyclass]
 pub struct Category{
+    #[pyo3(get)]
     pad_mst: bool,
     i2c: Vec<String>,
     c2i: CategoryToIndices,
 }
 
+#[pymethods]
 impl Category{
-    pub fn new(arr: &Vec<String>, pad_mst: bool) -> Category {
+    #[new]
+    pub fn new(arr: &PyList, pad_mst: bool) -> Self {
         let mut i2c: Vec<String>;
         if pad_mst {
             i2c = vec!["[MST]".to_string()];
-            i2c.extend(arr.clone());
+            i2c.extend(arr.iter().map(|x| x.to_string()));
         } else {
-            i2c = arr.clone();
+            i2c = arr.iter().map(|x| x.to_string()).collect();
         }
             
         let c2i = CategoryToIndices::new(&i2c, pad_mst);
@@ -63,20 +73,22 @@ impl Category{
         }
     }
 
-    pub fn categories_to_indices(&self, arr: &Vec<String>) -> Vec<i32> {
+    pub fn categories_to_indices(&self, arr: &PyList) -> PyResult<Vec<i32>> {
         let mut res = Vec::new();
-        for v in arr {
-            res.push(self.c2i.get_int(v));
+        for v in arr.iter() {
+            res.push(self.c2i.get_int(v.to_string().as_str()));
         }
-        res
+        Ok(res)
     }
 
-    pub fn indices_to_categories(&self, arr: &Vec<i32>) -> Vec<String> {
+    pub fn indices_to_categories(&self, arr: &PyList) -> PyResult<Vec<String>> {
         let mut res = Vec::new();
-        for v in arr {
-            res.push(self.i2c[*v as usize].clone());
+        // extract each element as integer
+        let arr_vec: Vec<i32> = arr.iter().map(|x| x.extract::<i32>().unwrap()).collect();
+        for v in arr_vec {
+            res.push(self.i2c[v as usize].clone());
         }
-        res
+        Ok(res)
     }
 
     pub fn category_to_onehot(&self, category: &str) -> Vec<f32> {
@@ -85,20 +97,20 @@ impl Category{
         res
     }
 
-    pub fn categories_to_onehot(&self, arr: &Vec<String>) -> Vec<Vec<f32>> {
+    pub fn categories_to_onehot(&self, arr: &PyList) -> PyResult<Vec<Vec<f32>>> {
         let mut res = Vec::new();
         for v in arr {
-            res.push(self.category_to_onehot(v));
+            res.push(self.category_to_onehot(v.to_string().as_str()));
         }
-        res
+        Ok(res)
     }
 
-    pub fn onehot_to_category(&self, arr: &Vec<f32>) -> String {
+    pub fn onehot_to_category(&self, arr: &PyList) -> PyResult<String> {
         // find 1 in arr and return the corresponding category
         let mut i = 0;
         for v in arr {
-            if *v == 1.0 {
-                return self.i2c[i].clone();
+            if v.extract::<f32>().unwrap() == 1.0 {
+                return Ok(self.i2c[i].clone());
             }
             i += 1;
         }
