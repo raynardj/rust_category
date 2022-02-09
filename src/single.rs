@@ -1,10 +1,5 @@
-#[macro_use]
-use numpy::{ToPyArray, PyArray};
-
-use std::collections::HashMap;
 use pyo3::prelude::*;
-use pyo3::types::*;
-
+use std::collections::HashMap;
 
 pub struct CategoryToIndices {
     pad_mst: bool,
@@ -14,10 +9,7 @@ pub struct CategoryToIndices {
 impl CategoryToIndices {
     pub fn new(arr: &Vec<String>, pad_mst: bool) -> Self {
         let mapper = Self::create_mapper(arr);
-        CategoryToIndices {
-            pad_mst,
-            mapper,
-        }
+        CategoryToIndices { pad_mst, mapper }
     }
 
     pub fn create_mapper(arr: &Vec<String>) -> HashMap<String, i32> {
@@ -33,30 +25,32 @@ impl CategoryToIndices {
     }
 
     pub fn get_int(&self, keyword: &str) -> i32 {
-        if self.pad_mst {
-            if self.mapper.contains_key(keyword) {
-                *self.mapper.get(keyword).unwrap()
-            } else {
-                0
+        let option = self.mapper.get(keyword);
+        match option {
+            Some(v) => *v,
+            None => {
+                if self.pad_mst {
+                    0
+                } else {
+                    -1
+                }
             }
-        } else {
-            *self.mapper.get(keyword).unwrap()
         }
     }
 }
 
 #[pyclass]
-pub struct Category{
+pub struct Category {
     #[pyo3(get)]
     pad_mst: bool,
     i2c: Vec<String>,
-    c2i: CategoryToIndices,
+    pub c2i: CategoryToIndices,
 }
 
 #[pymethods]
-impl Category{
+impl Category {
     #[new]
-    pub fn new(arr: &PyList, pad_mst: bool) -> Self {
+    pub fn new(arr: Vec<String>, pad_mst: bool) -> Self {
         let mut i2c: Vec<String>;
         if pad_mst {
             i2c = vec!["[MST]".to_string()];
@@ -64,31 +58,33 @@ impl Category{
         } else {
             i2c = arr.iter().map(|x| x.to_string()).collect();
         }
-            
         let c2i = CategoryToIndices::new(&i2c, pad_mst);
-        Category {
-            pad_mst,
-            i2c,
-            c2i,
-        }
+        Category { pad_mst, i2c, c2i }
     }
 
-    pub fn categories_to_indices(&self, arr: &PyList) -> PyResult<Vec<i32>> {
+    pub fn categories_to_indices(&self, arr: Vec<String>) -> Vec<i32> {
         let mut res = Vec::new();
         for v in arr.iter() {
-            res.push(self.c2i.get_int(v.to_string().as_str()));
+            res.push(self.c2i.get_int(v));
         }
-        Ok(res)
+        res
     }
 
-    pub fn indices_to_categories(&self, arr: &PyList) -> PyResult<Vec<String>> {
+    pub fn string_to_indices(&self, inputs: String, spliter: &str) -> Vec<i32> {
+        let mut res = Vec::new();
+        for v in inputs.split(spliter) {
+            res.push(self.c2i.get_int(v));
+        }
+        res
+    }
+
+    pub fn indices_to_categories(&self, arr: Vec<i32>) -> Vec<String> {
         let mut res = Vec::new();
         // extract each element as integer
-        let arr_vec: Vec<i32> = arr.iter().map(|x| x.extract::<i32>().unwrap()).collect();
-        for v in arr_vec {
+        for &v in arr.iter() {
             res.push(self.i2c[v as usize].clone());
         }
-        Ok(res)
+        res
     }
 
     pub fn category_to_onehot(&self, category: &str) -> Vec<f32> {
@@ -97,24 +93,28 @@ impl Category{
         res
     }
 
-    pub fn categories_to_onehot(&self, arr: &PyList) -> PyResult<Vec<Vec<f32>>> {
+    pub fn categories_to_onehot(&self, arr: Vec<String>) -> Vec<Vec<f32>> {
         let mut res = Vec::new();
-        for v in arr {
-            res.push(self.category_to_onehot(v.to_string().as_str()));
+        let empty = vec![0.0; self.c2i.len()];
+
+        let indices = self.categories_to_indices(arr);
+        for &i in indices.iter() {
+            let mut tmp = empty.clone();
+            tmp[i as usize] = 1.0;
+            res.push(tmp);
         }
-        Ok(res)
+        res
     }
 
-    pub fn onehot_to_category(&self, arr: &PyList) -> PyResult<String> {
+    pub fn onehot_to_category(&self, arr: Vec<f32>) -> String {
         // find 1 in arr and return the corresponding category
         let mut i = 0;
-        for v in arr {
-            if v.extract::<f32>().unwrap() == 1.0 {
-                return Ok(self.i2c[i].clone());
+        for &v in arr.iter() {
+            if v == 1.0 {
+                return self.i2c[i].clone();
             }
             i += 1;
         }
         panic!("onehot_to_category: no hot in the encoded");
     }
 }
-

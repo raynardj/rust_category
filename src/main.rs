@@ -1,11 +1,13 @@
 mod single;
-use single::{Category};
+use single::Category;
+mod multi;
+use multi::MultiCategory;
 use pyo3::prelude::*;
-use pyo3::types::*;
 
 #[pymodule]
-fn rust_category(py: Python, m: &PyModule) -> PyResult<()> {
+fn rust_category(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Category>()?;
+    m.add_class::<MultiCategory>()?;
     Ok(())
 }
 
