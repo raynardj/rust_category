@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 pub struct CategoryToIndices {
     pad_mst: bool,
-    mapper: HashMap<String, i32>,
+    mapper: HashMap<String, usize>,
 }
 
 impl CategoryToIndices {
@@ -12,10 +12,10 @@ impl CategoryToIndices {
         CategoryToIndices { pad_mst, mapper }
     }
 
-    pub fn create_mapper(arr: &Vec<String>) -> HashMap<String, i32> {
+    pub fn create_mapper(arr: &Vec<String>) -> HashMap<String, usize> {
         let mut mapper = HashMap::new();
         for (i, v) in arr.iter().enumerate() {
-            mapper.insert(v.to_string(), i as i32);
+            mapper.insert(v.to_string(), i);
         }
         mapper
     }
@@ -24,7 +24,7 @@ impl CategoryToIndices {
         self.mapper.len()
     }
 
-    pub fn get_int(&self, keyword: &str) -> i32 {
+    pub fn get_int(&self, keyword: &str) -> usize {
         let option = self.mapper.get(keyword);
         match option {
             Some(v) => *v,
@@ -32,7 +32,7 @@ impl CategoryToIndices {
                 if self.pad_mst {
                     0
                 } else {
-                    -1
+                    0
                 }
             }
         }
@@ -62,7 +62,7 @@ impl Category {
         Category { pad_mst, i2c, c2i }
     }
 
-    pub fn categories_to_indices(&self, arr: Vec<String>) -> Vec<i32> {
+    pub fn categories_to_indices(&self, arr: Vec<String>) -> Vec<usize> {
         let mut res = Vec::new();
         for v in arr.iter() {
             res.push(self.c2i.get_int(v));
@@ -70,7 +70,7 @@ impl Category {
         res
     }
 
-    pub fn string_to_indices(&self, inputs: String, spliter: &str) -> Vec<i32> {
+    pub fn string_to_indices(&self, inputs: String, spliter: &str) -> Vec<usize> {
         let mut res = Vec::new();
         for v in inputs.split(spliter) {
             res.push(self.c2i.get_int(v));
@@ -78,18 +78,18 @@ impl Category {
         res
     }
 
-    pub fn indices_to_categories(&self, arr: Vec<i32>) -> Vec<String> {
+    pub fn indices_to_categories(&self, arr: Vec<usize>) -> Vec<String> {
         let mut res = Vec::new();
         // extract each element as integer
         for &v in arr.iter() {
-            res.push(self.i2c[v as usize].clone());
+            res.push(self.i2c[v].clone());
         }
         res
     }
 
-    pub fn category_to_onehot(&self, category: &str) -> Vec<f32> {
+    pub fn category_to_onehot(&self, category: String) -> Vec<f32> {
         let mut res = vec![0.0; self.c2i.len()];
-        res[self.c2i.get_int(category) as usize] = 1.0;
+        res[self.c2i.get_int(&category)] = 1.0;
         res
     }
 
