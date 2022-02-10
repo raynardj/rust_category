@@ -1,9 +1,9 @@
+use hashbrown::HashMap;
 use pyo3::prelude::*;
-use std::collections::HashMap;
 
 pub struct CategoryToIndices {
     pad_mst: bool,
-    mapper: HashMap<String, usize>,
+    mapper: HashMap<String, u32>,
 }
 
 impl CategoryToIndices {
@@ -12,30 +12,50 @@ impl CategoryToIndices {
         CategoryToIndices { pad_mst, mapper }
     }
 
-    pub fn create_mapper(arr: &Vec<String>) -> HashMap<String, usize> {
-        let mut mapper = HashMap::new();
+    pub fn create_mapper(arr: &Vec<String>) -> HashMap<String, u32> {
+        let mut mapper = HashMap::with_capacity(arr.len());
         for (i, v) in arr.iter().enumerate() {
-            mapper.insert(v.to_string(), i);
+            mapper.insert(v.to_string(), i as u32);
         }
         mapper
+    }
+
+    pub fn __str__(&self) -> String {
+        format!("CategoryToIndices: Length{:?}", self.mapper.len())
+    }
+
+    pub fn __repr__(&self) -> String {
+        format!("{}", self.__str__())
+    }
+
+    pub fn __len__(&self) -> usize {
+        self.mapper.len()
     }
 
     pub fn len(&self) -> usize {
         self.mapper.len()
     }
 
-    pub fn get_int(&self, keyword: &str) -> usize {
-        let option = self.mapper.get(keyword);
-        match option {
+    pub fn get_int(&self, keyword: &str) -> u32 {
+        /* from category string to index */
+        match self.mapper.get(keyword) {
             Some(v) => *v,
             None => {
                 if self.pad_mst {
                     0
                 } else {
-                    0
+                    panic!("[KeyError]'{}' not found", keyword);
                 }
             }
         }
+    }
+
+    pub fn __call__(&self, keyword: &str) -> u32 {
+        self.get_int(keyword)
+    }
+
+    pub fn __getitem__(&self, keyword: &str) -> u32 {
+        self.get_int(keyword)
     }
 }
 
@@ -43,6 +63,7 @@ impl CategoryToIndices {
 pub struct Category {
     #[pyo3(get)]
     pad_mst: bool,
+    #[pyo3(get)]
     i2c: Vec<String>,
     pub c2i: CategoryToIndices,
 }
@@ -62,15 +83,15 @@ impl Category {
         Category { pad_mst, i2c, c2i }
     }
 
-    pub fn categories_to_indices(&self, arr: Vec<String>) -> Vec<usize> {
-        let mut res = Vec::new();
-        for v in arr.iter() {
-            res.push(self.c2i.get_int(v));
+    pub fn categories_to_indices(&self, arr: Vec<String>) -> Vec<u32> {
+        let mut res = Vec::with_capacity(arr.len());
+        for cate in arr.iter() {
+            res.push(self.c2i.get_int(cate));
         }
         res
     }
 
-    pub fn string_to_indices(&self, inputs: String, spliter: &str) -> Vec<usize> {
+    pub fn string_to_indices(&self, inputs: String, spliter: &str) -> Vec<u32> {
         let mut res = Vec::new();
         for v in inputs.split(spliter) {
             res.push(self.c2i.get_int(v));
@@ -78,26 +99,25 @@ impl Category {
         res
     }
 
-    pub fn indices_to_categories(&self, arr: Vec<usize>) -> Vec<String> {
-        let mut res = Vec::new();
+    pub fn indices_to_categories(&self, arr: Vec<u32>) -> Vec<String> {
+        let mut res = Vec::with_capacity(arr.len());
         // extract each element as integer
         for &v in arr.iter() {
-            res.push(self.i2c[v].clone());
+            res.push(self.i2c[v as usize].clone());
         }
         res
     }
 
     pub fn category_to_onehot(&self, category: String) -> Vec<f32> {
         let mut res = vec![0.0; self.c2i.len()];
-        res[self.c2i.get_int(&category)] = 1.0;
+        res[self.c2i.get_int(&category) as usize] = 1.0;
         res
     }
 
     pub fn categories_to_onehot(&self, arr: Vec<String>) -> Vec<Vec<f32>> {
-        let mut res = Vec::new();
         let empty = vec![0.0; self.c2i.len()];
-
         let indices = self.categories_to_indices(arr);
+        let mut res = Vec::with_capacity(indices.len());
         for &i in indices.iter() {
             let mut tmp = empty.clone();
             tmp[i as usize] = 1.0;
@@ -116,5 +136,17 @@ impl Category {
             i += 1;
         }
         panic!("onehot_to_category: no hot in the encoded");
+    }
+
+    pub fn __len__(&self) -> usize {
+        self.c2i.len()
+    }
+
+    pub fn __str__(&self) -> String {
+        format!("Category: Length..{:?}", self.c2i.len())
+    }
+
+    pub fn __repr__(&self) -> String {
+        format!("Category: Length..{:?}", self.c2i.len())
     }
 }

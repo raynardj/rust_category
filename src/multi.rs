@@ -24,7 +24,7 @@ impl MultiCategory {
         }
     }
 
-    pub fn categories_to_indices(&self, arr: Vec<Option<String>>) -> Vec<Vec<usize>> {
+    pub fn categories_to_indices(&self, arr: Vec<Option<String>>) -> Vec<Vec<u32>> {
         /*
         Take in a list of string
         A string is a row of data
@@ -68,7 +68,7 @@ impl MultiCategory {
                 Some(v) => {
                     let v_str = v.to_string();
                     for cate in v_str.split(&self.spliter).map(|x| x.trim().to_string()) {
-                        tmp[self.category.c2i.get_int(&cate)] = 1.0;
+                        tmp[self.category.c2i.get_int(&cate) as usize] = 1.0;
                     }
                     res.push(tmp);
                 }
