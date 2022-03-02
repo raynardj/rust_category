@@ -6,6 +6,7 @@ on:
       - 'docs/**'
       - '**.md'
       - 'nbs/**'
+      - '.gitignore'
 
 jobs:
   build-linux:
@@ -40,7 +41,7 @@ jobs:
       with:
         maturin-version: 0.12.9
         command: build
-        args: --release --out dist
+        args: --release --out dist  --no-sdist
     - name: Add conda to system path
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
@@ -49,7 +50,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements-test.txt
-        pip install rust-category --no-index --find-links dist --force-reinstall
+        pip install rust_category --no-index --find-links dist --force-reinstall
         pip install git+https://github.com/raynardj/category
     - name: Test with pytest
       run: pytest -vv
