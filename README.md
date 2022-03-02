@@ -2,13 +2,28 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/rust_category)](https://pypi.org/project/rust_category)
 ![License](https://img.shields.io/github/license/raynardj/rust_category)
-[![Test rust_category](https://github.com/raynardj/rust_category/actions/workflows/pypi.yml/badge.svg)](https://github.com/raynardj/rust_category/actions/workflows/pypi.yml)
-![PyPI Downloads](https://img.shields.io/pypi/dm/rust_category)
+[![Test](https://github.com/raynardj/rust_category/actions/workflows/test.yml/badge.svg)](https://github.com/raynardj/rust_category/actions/workflows/test.yml)
+[![Build](https://github.com/raynardj/rust_category/actions/workflows/pypi.yml/badge.svg)](https://github.com/raynardj/rust_category/actions/workflows/pypi.yml)
+![Downloads](https://img.shields.io/pypi/dm/rust_category)
 
 > This will be a supporting part of python library [here](https://github.com/raynardj/category)
 
+To fully use the library, you can try to use it from
+
 ```shell
-pip install rust_category
+pip install category
+```
+
+Then in python
+
+```python
+from category.fast import Category, MultiCategory
+```
+
+To just install the rust core, you can:
+
+```shell
+pip install rust-category
 ```
 
 ## Aftermath
