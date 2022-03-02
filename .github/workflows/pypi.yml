@@ -1,0 +1,146 @@
+name: Deploy PyPI
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Build Wheels x86_64
+        uses: messense/maturin-action@v1
+        with:
+          maturin-version: 0.12.9
+          command: build
+          args: --release --out dist
+
+      - name: Install Built Wheel - x86_64
+        run: |
+          pip install rust_category --no-index --find-links dist --force-reinstall
+          python -c "from rust_category import Category"
+
+      - name: Build Wheels - Universal2
+        uses: messense/maturin-action@v1
+        with:
+          args: --release --universal2 --out dist --no-sdist
+
+      - name: Install Built Wheel - Universal2
+        run: |
+          pip install rust_category --no-index --find-links dist --force-reinstall
+          python -c "from rust_category import Category"
+      
+      - name: Upload wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target: [x64, x86]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+          architecture: ${{ matrix.target }}
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Build Wheels
+        uses: messense/maturin-action@v1
+        with:
+          maturin-version: 0.12.9
+          command: build
+          target: ${{ matrix.target }}
+          args: --release --out dist --no-sdist
+
+      - name: Install Built Wheel
+        run: |
+          pip install rust_category --no-index --find-links dist --force-reinstall
+          python -c "from rust_category import Category"
+      
+      - name: Upload wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist
+
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64, i686]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+          architecture: x64
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Build Wheels
+        uses: messense/maturin-action@v1
+        with:
+          maturin-version: 0.12.9
+          command: build
+          target: ${{ matrix.target }}
+          manylinux: auto
+          args: --release --out dist --no-sdist
+
+      - name: Install Built Wheel
+        if: matrix.target == 'x86_64'
+        run: |
+          pip install rust_category --no-index --find-links dist --force-reinstall
+          python -c "from rust_category import Category"
+      
+      - name: Upload wheels
+        uses: actions/upload-artifact@v2
+        with:
+          name: wheels
+          path: dist
+  
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [ macos, windows, linux,]
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: wheels
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Publish to PyPi
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          pip install --upgrade twine
+          twine upload --skip-existing *
