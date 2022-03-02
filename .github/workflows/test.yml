@@ -37,6 +37,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements-test.txt
         pip install -e .
-        pip install category
+        pip install git+https://github.com/raynardj/category
     - name: Test with pytest
       run: pytest -vv
