@@ -1,7 +1,6 @@
 # Rust core part of library category
 
 [![PyPI version](https://img.shields.io/pypi/v/rust_category)](https://pypi.org/project/rust_category)
-![Python version](https://img.shields.io/pypi/pyversions/rust_category)
 ![License](https://img.shields.io/github/license/raynardj/rust_category)
 [![Test rust_category](https://github.com/raynardj/rust_category/actions/workflows/pypi.yml/badge.svg)](https://github.com/raynardj/rust_category/actions/workflows/pypi.yml)
 ![PyPI Downloads](https://img.shields.io/pypi/dm/rust_category)
