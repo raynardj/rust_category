@@ -80,4 +80,24 @@ impl MultiCategory {
         }
         res
     }
+
+    pub fn nhot_to_list(&self, arr: Vec<Vec<f32>>) -> Vec<Vec<String>> {
+        /*
+        Take in a list of list of f32
+        A list of f32 is a row of data
+        convert each f32 to integer
+        Return a list of list of string
+        */
+        let mut res = Vec::new();
+        for v in arr.iter() {
+            let mut tmp = Vec::new();
+            for i in 0..self.length {
+                if v[i] == 1.0 {
+                    tmp.push(self.category.i2c[i].clone());
+                }
+            }
+            res.push(tmp);
+        }
+        res
+    }
 }

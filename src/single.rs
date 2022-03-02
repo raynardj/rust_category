@@ -64,7 +64,7 @@ pub struct Category {
     #[pyo3(get)]
     pad_mst: bool,
     #[pyo3(get)]
-    i2c: Vec<String>,
+    pub i2c: Vec<String>,
     pub c2i: CategoryToIndices,
 }
 
