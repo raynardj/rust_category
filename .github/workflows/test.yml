@@ -14,13 +14,16 @@ jobs:
       matrix:
         python: [3.7, "3.10"]
         os: [ubuntu-latest]
+        architecture: x64
         include:
         - python: 3.8
           os: macos-latest
+          architecture: x64
           experimental: true
         - python: 3.9
           os: windows-latest
           experimental: true
+          architecture: x86
 
     steps:
     - uses: actions/checkout@v2
@@ -28,6 +31,19 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python }}
+        architecture: ${{ matrix.architecture }}
+    - name: Install Rust Toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+    - name: Build Wheels
+      uses: messense/maturin-action@v1
+      with:
+        maturin-version: 0.12.9
+        command: build
+        args: --release --out dist
     - name: Add conda to system path
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
@@ -36,7 +52,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements-test.txt
-        pip install -e .
+        pip install rust_category --no-index --find-links dist --force-reinstall
         pip install git+https://github.com/raynardj/category
     - name: Test with pytest
       run: pytest -vv
